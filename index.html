@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Office Profile Photo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .card { background: #fff; border-radius: 16px; padding: 2rem; max-width: 400px; width: 100%; box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+  h1 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+  p.sub { font-size: 14px; color: #888; margin-bottom: 1.5rem; }
+  label { font-size: 13px; font-weight: 500; color: #555; display: block; margin-bottom: 6px; }
+  input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; margin-bottom: 1.25rem; transition: border 0.2s; }
+  input[type="text"]:focus { border-color: #7c6fe0; }
+  .video-wrap { position: relative; border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1rem; aspect-ratio: 1; }
+  video, canvas { width: 100%; height: 100%; object-fit: cover; display: block; }
+  canvas { display: none; }
+  .preview-img { width: 100%; border-radius: 12px; margin-bottom: 1rem; display: none; }
+  .btn { width: 100%; padding: 12px; border-radius: 10px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s, opacity 0.2s; }
+  .btn-primary { background: #7c6fe0; color: #fff; margin-bottom: 10px; }
+  .btn-primary:hover { background: #6a5ec8; }
+  .btn-secondary { background: #f0f0ee; color: #444; }
+  .btn-secondary:hover { background: #e4e4e0; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status { text-align: center; font-size: 13px; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; }
+  .status.success { background: #e6f7ee; color: #1a7a45; display: block; }
+  .status.error { background: #fdeaea; color: #a32d2d; display: block; }
+  .tip { font-size: 12px; color: #aaa; text-align: center; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>📸 Office Profile Photo</h1>
+  <p class="sub">Snap a quick selfie for our team directory.</p>
+
+  <label for="name">Your full name</label>
+  <input type="text" id="name" placeholder="e.g. Ada Okafor" autocomplete="name" />
+
+  <label for="pf">PF number</label>
+  <input type="text" id="pf" placeholder="e.g. PF-00123" />
+
+  <label>Your photo</label>
+  <div class="video-wrap" id="video-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+  </div>
+  <img id="preview" class="preview-img" alt="Your preview photo" />
+
+  <button class="btn btn-primary" id="snap-btn" onclick="snapPhoto()">Take photo</button>
+  <button class="btn btn-secondary" id="retake-btn" onclick="retake()" style="display:none">Retake</button>
+  <button class="btn btn-primary" id="submit-btn" onclick="submitPhoto()" style="display:none" disabled>Submit photo</button>
+
+  <div class="status" id="status"></div>
+  <p class="tip">Your photo will be saved securely to our team's Google Drive.</p>
+</div>
+
+<script>
+  // ⬇️ PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwspbwRruNSTRdK3XUV-cBqgXGTB-HEe-yJ0f7OOsD19RhUfZbbAjIwbvMpbkUyvM2_yQ/exec";
+
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const preview = document.getElementById('preview');
+  const snapBtn = document.getElementById('snap-btn');
+  const retakeBtn = document.getElementById('retake-btn');
+  const submitBtn = document.getElementById('submit-btn');
+  const status = document.getElementById('status');
+  let capturedImage = null;
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+    .then(stream => { video.srcObject = stream; })
+    .catch(() => showStatus('Could not access camera. Please allow camera access and reload.', 'error'));
+
+  function snapPhoto() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    capturedImage = canvas.toDataURL('image/jpeg', 0.85);
+    preview.src = capturedImage;
+    preview.style.display = 'block';
+    document.getElementById('video-wrap').style.display = 'none';
+    snapBtn.style.display = 'none';
+    retakeBtn.style.display = 'block';
+    submitBtn.style.display = 'block';
+    submitBtn.disabled = false;
+  }
+
+  function retake() {
+    capturedImage = null;
+    preview.style.display = 'none';
+    document.getElementById('video-wrap').style.display = 'block';
+    snapBtn.style.display = 'block';
+    retakeBtn.style.display = 'none';
+    submitBtn.style.display = 'none';
+    status.className = 'status';
+  }
+
+  async function submitPhoto() {
+    const name = document.getElementById('name').value.trim();
+    const pf = document.getElementById('pf').value.trim();
+    if (!name) { showStatus('Please enter your name first.', 'error'); return; }
+    if (!pf) { showStatus('Please enter your PF number.', 'error'); return; }
+    if (!capturedImage) { showStatus('Please take a photo first.', 'error'); return; }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading...';
+    status.className = 'status';
+
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ name, pf, image: capturedImage }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      showStatus('✅ Photo submitted! Thank you, ' + name + '.', 'success');
+      submitBtn.style.display = 'none';
+      retakeBtn.style.display = 'none';
+
+    } catch (err) {
+      showStatus('Upload failed: ' + err.message, 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit photo';
+    }
+  }
+
+  function showStatus(msg, type) {
+    status.textContent = msg;
+    status.className = 'status ' + type;
+  }
+</script>
+</body>
+</html>
