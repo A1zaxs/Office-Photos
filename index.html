@@ -13,30 +13,32 @@
   label { font-size: 13px; font-weight: 500; color: #555; display: block; margin-bottom: 6px; }
   input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; margin-bottom: 1.25rem; transition: border 0.2s; }
   input[type="text"]:focus { border-color: #7c6fe0; }
+  .divider { border: none; border-top: 1px solid #f0f0ee; margin: 1.25rem 0; }
+  .toggle { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .toggle button { flex: 1; padding: 8px; border-radius: 8px; border: 1.5px solid #ddd; background: #fff; font-size: 13px; font-weight: 500; color: #888; cursor: pointer; transition: all 0.2s; }
+  .toggle button.active { border-color: #7c6fe0; color: #7c6fe0; background: #f3f1fd; }
   .video-wrap { border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1rem; aspect-ratio: 1; }
   video { width: 100%; height: 100%; object-fit: cover; display: block; }
   canvas { display: none; }
   .preview-img { width: 100%; border-radius: 12px; margin-bottom: 1rem; display: none; }
+  .upload-box { border: 2px dashed #ddd; border-radius: 12px; padding: 2rem 1rem; text-align: center; cursor: pointer; margin-bottom: 1rem; transition: border 0.2s; background: #fafafa; }
+  .upload-box:hover { border-color: #7c6fe0; }
+  .upload-box p { font-size: 14px; color: #aaa; margin-top: 8px; }
+  .upload-box span { font-size: 2rem; }
+  input[type="file"] { display: none; }
   .btn { width: 100%; padding: 12px; border-radius: 10px; border: none; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s, opacity 0.2s; margin-bottom: 10px; }
   .btn-primary { background: #7c6fe0; color: #fff; }
   .btn-primary:hover { background: #6a5ec8; }
   .btn-secondary { background: #f0f0ee; color: #444; }
   .btn-secondary:hover { background: #e4e4e0; }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .divider { border: none; border-top: 1px solid #f0f0ee; margin: 1.25rem 0; }
-  /* Signature toggle */
-  .sig-toggle { display: flex; gap: 8px; margin-bottom: 1rem; }
-  .sig-toggle button { flex: 1; padding: 8px; border-radius: 8px; border: 1.5px solid #ddd; background: #fff; font-size: 13px; font-weight: 500; color: #888; cursor: pointer; transition: all 0.2s; }
-  .sig-toggle button.active { border-color: #7c6fe0; color: #7c6fe0; background: #f3f1fd; }
-  /* Signature draw */
   .sig-pad-wrap { position: relative; margin-bottom: 6px; }
   #signature-pad { border: 1.5px dashed #ccc; border-radius: 10px; background: #fafafa; width: 100%; height: 150px; display: block; touch-action: none; cursor: crosshair; }
   .clear-sig { position: absolute; top: 8px; right: 10px; font-size: 12px; color: #7c6fe0; background: none; border: none; cursor: pointer; }
-  /* Signature camera */
   .sig-cam-wrap { border-radius: 12px; overflow: hidden; background: #111; margin-bottom: 1rem; height: 160px; }
   .sig-cam-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .sig-preview { width: 100%; border-radius: 10px; margin-bottom: 1rem; display: none; border: 1.5px solid #eee; }
-  .sig-tip { font-size: 11px; color: #bbb; margin-bottom: 1rem; }
+  .tip-text { font-size: 11px; color: #bbb; margin-bottom: 1rem; }
   .status { text-align: center; font-size: 13px; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; }
   .status.success { background: #e6f7ee; color: #1a7a45; display: block; }
   .status.error { background: #fdeaea; color: #a32d2d; display: block; }
@@ -58,19 +60,38 @@
 
   <!-- PROFILE PHOTO -->
   <label>Profile photo</label>
-  <div class="video-wrap" id="video-wrap">
-    <video id="video" autoplay playsinline muted></video>
+  <div class="toggle">
+    <button id="photo-tab-camera" class="active" onclick="switchPhoto('camera')">📷 Take photo</button>
+    <button id="photo-tab-upload" onclick="switchPhoto('upload')">🖼 Upload photo</button>
   </div>
-  <canvas id="canvas"></canvas>
-  <img id="preview" class="preview-img" alt="Profile photo preview" />
-  <button class="btn btn-primary" id="snap-btn" onclick="snapPhoto()">📷 Take photo</button>
-  <button class="btn btn-secondary" id="retake-btn" onclick="retake()" style="display:none">↩ Retake photo</button>
+
+  <!-- Camera mode -->
+  <div id="photo-camera-section">
+    <div class="video-wrap" id="video-wrap">
+      <video id="video" autoplay playsinline muted></video>
+    </div>
+    <canvas id="canvas"></canvas>
+    <img id="preview" class="preview-img" alt="Profile photo preview" />
+    <button class="btn btn-primary" id="snap-btn" onclick="snapPhoto()">📷 Take photo</button>
+    <button class="btn btn-secondary" id="retake-btn" onclick="retake()" style="display:none">↩ Retake photo</button>
+  </div>
+
+  <!-- Upload mode -->
+  <div id="photo-upload-section" style="display:none">
+    <div class="upload-box" onclick="document.getElementById('photo-file').click()">
+      <span>🖼</span>
+      <p>Tap to choose a photo from your device</p>
+    </div>
+    <input type="file" id="photo-file" accept="image/*" onchange="handlePhotoUpload(event)" />
+    <img id="upload-preview" class="preview-img" alt="Uploaded photo preview" />
+    <button class="btn btn-secondary" id="change-photo-btn" onclick="document.getElementById('photo-file').click()" style="display:none">↩ Change photo</button>
+  </div>
 
   <hr class="divider">
 
   <!-- SIGNATURE -->
   <label>Signature</label>
-  <div class="sig-toggle">
+  <div class="toggle">
     <button id="tab-draw" class="active" onclick="switchSig('draw')">✏️ Draw signature</button>
     <button id="tab-photo" onclick="switchSig('photo')">📸 Photo of signature</button>
   </div>
@@ -81,17 +102,17 @@
       <canvas id="signature-pad" width="380" height="150"></canvas>
       <button class="clear-sig" onclick="clearSignature()">Clear</button>
     </div>
-    <p class="sig-tip">Draw your signature above using your finger or mouse</p>
+    <p class="tip-text">Draw your signature above using your finger or mouse</p>
   </div>
 
-  <!-- Photo mode -->
+  <!-- Sig photo mode -->
   <div id="sig-photo-section" style="display:none">
     <div class="sig-cam-wrap" id="sig-cam-wrap">
       <video id="sig-video" autoplay playsinline muted></video>
     </div>
     <canvas id="sig-canvas"></canvas>
     <img id="sig-preview" class="sig-preview" alt="Signature photo preview" />
-    <p class="sig-tip">Place your signed paper in front of the camera and snap it</p>
+    <p class="tip-text">Place your signed paper in front of the camera and snap it</p>
     <button class="btn btn-primary" id="sig-snap-btn" onclick="snapSignature()">📷 Snap signature</button>
     <button class="btn btn-secondary" id="sig-retake-btn" onclick="retakeSignature()" style="display:none">↩ Retake</button>
   </div>
@@ -104,26 +125,45 @@
 </div>
 
 <script>
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz823-10GAgM6RtYIk6XhFZNy6juQ9_2dECGN__vgLdpXRG1KgvF69k2nMyy9SJO7Yz/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwspbwRruNSTRdK3XUV-cBqgXGTB-HEe-yJ0f7OOsD19RhUfZbbAjIwbvMpbkUyvM2_yQ/exec";
 
-  // ── Profile photo ──
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const preview = document.getElementById('preview');
   let capturedImage = null;
+  let photoMode = 'camera';
   let sigMode = 'draw';
   let capturedSignature = null;
   let hasSigned = false;
+  let sigStream = null;
 
+  // ── Camera init ──
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
-    .then(s => video.srcObject = s)
+    .then(s => document.getElementById('video').srcObject = s)
     .catch(() => showStatus('Camera access denied. Please allow and reload.', 'error'));
 
+  // ── Photo mode toggle ──
+  function switchPhoto(mode) {
+    photoMode = mode;
+    document.getElementById('photo-tab-camera').classList.toggle('active', mode === 'camera');
+    document.getElementById('photo-tab-upload').classList.toggle('active', mode === 'upload');
+    document.getElementById('photo-camera-section').style.display = mode === 'camera' ? 'block' : 'none';
+    document.getElementById('photo-upload-section').style.display = mode === 'upload' ? 'block' : 'none';
+    capturedImage = null;
+    document.getElementById('preview').style.display = 'none';
+    document.getElementById('upload-preview').style.display = 'none';
+    document.getElementById('snap-btn').style.display = 'block';
+    document.getElementById('retake-btn').style.display = 'none';
+    document.getElementById('change-photo-btn').style.display = 'none';
+    checkReady();
+  }
+
+  // ── Take photo ──
   function snapPhoto() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
     capturedImage = canvas.toDataURL('image/jpeg', 0.85);
-    preview.src = capturedImage; preview.style.display = 'block';
+    document.getElementById('preview').src = capturedImage;
+    document.getElementById('preview').style.display = 'block';
     document.getElementById('video-wrap').style.display = 'none';
     document.getElementById('snap-btn').style.display = 'none';
     document.getElementById('retake-btn').style.display = 'block';
@@ -132,15 +172,29 @@
 
   function retake() {
     capturedImage = null;
-    preview.style.display = 'none';
+    document.getElementById('preview').style.display = 'none';
     document.getElementById('video-wrap').style.display = 'block';
     document.getElementById('snap-btn').style.display = 'block';
     document.getElementById('retake-btn').style.display = 'none';
     checkReady();
   }
 
+  // ── Upload photo ──
+  function handlePhotoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      capturedImage = ev.target.result;
+      document.getElementById('upload-preview').src = capturedImage;
+      document.getElementById('upload-preview').style.display = 'block';
+      document.getElementById('change-photo-btn').style.display = 'block';
+      checkReady();
+    };
+    reader.readAsDataURL(file);
+  }
+
   // ── Signature toggle ──
-  let sigStream = null;
   function switchSig(mode) {
     sigMode = mode;
     document.getElementById('tab-draw').classList.toggle('active', mode === 'draw');
@@ -176,19 +230,17 @@
   sigPad.addEventListener('touchstart', e => { e.preventDefault(); isSigning = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); }, { passive: false });
   sigPad.addEventListener('touchmove', e => { e.preventDefault(); if (!isSigning) return; const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); hasSigned = true; checkReady(); }, { passive: false });
   sigPad.addEventListener('touchend', () => isSigning = false);
-
   function clearSignature() { sigCtx.clearRect(0, 0, sigPad.width, sigPad.height); hasSigned = false; checkReady(); }
 
   // ── Signature photo ──
-  const sigVideo = document.getElementById('sig-video');
-  const sigCanvas = document.getElementById('sig-canvas');
-  const sigPreview = document.getElementById('sig-preview');
-
   function snapSignature() {
-    sigCanvas.width = sigVideo.videoWidth; sigCanvas.height = sigVideo.videoHeight;
-    sigCanvas.getContext('2d').drawImage(sigVideo, 0, 0);
-    capturedSignature = sigCanvas.toDataURL('image/jpeg', 0.85);
-    sigPreview.src = capturedSignature; sigPreview.style.display = 'block';
+    const sv = document.getElementById('sig-video');
+    const sc = document.getElementById('sig-canvas');
+    sc.width = sv.videoWidth; sc.height = sv.videoHeight;
+    sc.getContext('2d').drawImage(sv, 0, 0);
+    capturedSignature = sc.toDataURL('image/jpeg', 0.85);
+    document.getElementById('sig-preview').src = capturedSignature;
+    document.getElementById('sig-preview').style.display = 'block';
     document.getElementById('sig-cam-wrap').style.display = 'none';
     document.getElementById('sig-snap-btn').style.display = 'none';
     document.getElementById('sig-retake-btn').style.display = 'block';
@@ -197,7 +249,7 @@
 
   function retakeSignature() {
     capturedSignature = null; hasSigned = false;
-    sigPreview.style.display = 'none';
+    document.getElementById('sig-preview').style.display = 'none';
     document.getElementById('sig-cam-wrap').style.display = 'block';
     document.getElementById('sig-snap-btn').style.display = 'block';
     document.getElementById('sig-retake-btn').style.display = 'none';
@@ -214,7 +266,7 @@
     const pf = document.getElementById('pf').value.trim();
     if (!name) { showStatus('Please enter your full name.', 'error'); return; }
     if (!pf) { showStatus('Please enter your PF number.', 'error'); return; }
-    if (!capturedImage) { showStatus('Please take your profile photo.', 'error'); return; }
+    if (!capturedImage) { showStatus('Please provide your profile photo.', 'error'); return; }
     if (!hasSigned) { showStatus('Please provide your signature.', 'error'); return; }
 
     const sigData = sigMode === 'draw' ? sigPad.toDataURL('image/png') : capturedSignature;
@@ -229,7 +281,6 @@
       });
       showStatus('✅ Submitted successfully! Thank you, ' + name + '.', 'success');
       btn.style.display = 'none';
-      document.getElementById('retake-btn').style.display = 'none';
     } catch (err) {
       showStatus('Upload failed: ' + err.message, 'error');
       btn.disabled = false; btn.textContent = '✅ Submit profile';
